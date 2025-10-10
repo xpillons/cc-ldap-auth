@@ -209,6 +209,10 @@ handle_keyvault_auth() {
         echo "$SECRET_UPDATED" > "$MARKER_FILE"
         chmod 600 "$MARKER_FILE"
         
+        # The following command attempts to format the Unix timestamp in $SECRET_UPDATED as a human-readable date.
+        # - 'date -d @$SECRET_UPDATED' works on GNU date (Linux).
+        # - 'date -r $SECRET_UPDATED' works on BSD/macOS date.
+        # If both fail, it falls back to echoing the raw timestamp.
         log "Secret last updated: $(date -d @$SECRET_UPDATED 2>/dev/null || date -r $SECRET_UPDATED 2>/dev/null || echo $SECRET_UPDATED)"
         export BIND_DN_PASSWORD
     else
@@ -358,12 +362,10 @@ setup_password_rotation_cron() {
     
     # Get current crontab and add new job
     current_crontab=$(crontab -l 2>/dev/null || echo "")
-    if [ -n "$current_crontab" ]; then
-        echo "$current_crontab" | crontab -
-        echo "$CRON_JOB" | crontab -
-    else
-        echo "$CRON_JOB" | crontab -
-    fi
+    {
+        echo "$current_crontab"
+        echo "$CRON_JOB"
+    } | crontab -
     
     # Verify the cron job was added
     log "Verifying cron job installation..."
