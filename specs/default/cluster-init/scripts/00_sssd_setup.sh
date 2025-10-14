@@ -177,9 +177,16 @@ handle_keyvault_auth() {
         fi
         
         # Logon using the VM identity
-        log "Logging in to Azure using managed identity with client ID $CLIENT_ID"
-        az login --identity --client-id "$CLIENT_ID" >/dev/null 2>&1 || (log "Error: az login failed"; exit 1)
-        
+        # CLIENT_ID is optional - if empty/null, use System Assigned Managed Identity
+        # If provided, use User Assigned Managed Identity with the specified client ID
+        if [ -z "$CLIENT_ID" ] || [ "$CLIENT_ID" == "null" ]; then
+            log "Using System Assigned Managed Identity (CLIENT_ID not specified)"
+            az login --identity >/dev/null 2>&1 || (log "Error: az login failed"; exit 1)
+        else
+            log "Using User Assigned Managed Identity with client ID: $CLIENT_ID"
+            az login --identity --client-id "$CLIENT_ID" >/dev/null 2>&1 || (log "Error: az login failed"; exit 1)
+        fi
+
         log "Retrieving LDAP bind password from Keyvault"
         SECRET_JSON=$(az keyvault secret show --name "$KEYVAULT_SECRET_NAME" --vault-name "$KEYVAULT_NAME" -o json)
         BIND_DN_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.value')

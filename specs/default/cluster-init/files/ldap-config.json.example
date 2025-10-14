@@ -1,6 +1,6 @@
 {
   "useKeyvault": "False",
-  "clientId": "your-client-id",
+  "clientId": "",
   "keyvaultName": "mykeyvault",
   "keyvaultSecretName": "ldap-bind-password",
   "cacheCredentials": "True",

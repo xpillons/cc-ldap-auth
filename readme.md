@@ -46,7 +46,7 @@ Edit `ldap-config.json` with your LDAP server details:
 ```json
 {
   "useKeyvault": "False",
-  "clientId": "your-managed-identity-client-id",
+  "clientId": "",
   "keyvaultName": "mykeyvault",
   "keyvaultSecretName": "ldap-bind-password",
   "cacheCredentials": "True",
@@ -96,11 +96,15 @@ Update your `ldap-config.json`:
 ```json
 {
   "useKeyvault": "True",
-  "clientId": "your-managed-identity-client-id",
+  "clientId": "",
   "keyvaultName": "mykeyvault",
   "keyvaultSecretName": "ldap-bind-password"
 }
 ```
+
+**Note**: The `clientId` field is optional:
+- **Empty or omitted**: Uses System Assigned Managed Identity (recommended for simplicity)
+- **Specified**: Uses User Assigned Managed Identity with the provided client ID
 
 ### 4. Deploy to CycleCloud
 
@@ -122,7 +126,7 @@ Drain existing nodes and start new ones to apply the LDAP authentication configu
 | Parameter | Description | Example | Required |
 |-----------|-------------|---------|----------|
 | `useKeyvault` | Enable Azure Key Vault for password retrieval | `"True"` or `"False"` | Yes |
-| `clientId` | Managed Identity client ID for Key Vault access | `"12345678-1234-1234-1234-123456789012"` | If using Key Vault |
+| `clientId` | Managed Identity client ID for Key Vault access (empty for System Assigned) | `"12345678-1234-1234-1234-123456789012"` or `""` | Optional |
 | `keyvaultName` | Name of the Azure Key Vault | `"mykeyvault"` | If using Key Vault |
 | `keyvaultSecretName` | Name of the secret containing LDAP password | `"ldap-bind-password"` | If using Key Vault |
 | `cacheCredentials` | Enable credential caching for offline authentication | `"True"` or `"False"` | Yes |
