@@ -39,9 +39,15 @@ initialize_environment() {
         exit 1
     fi
     
-    # allow access to ldap-config.json only to root and cyclecloud user
-    chown root:cyclecloud "$CONFIG_FILE"
-    chmod 640 "$CONFIG_FILE"
+    # allow access to ldap-config.json only to root and cyclecloud user (if cyclecloud group exists)
+    if getent group cyclecloud >/dev/null 2>&1; then
+        chown root:cyclecloud "$CONFIG_FILE"
+        chmod 640 "$CONFIG_FILE"
+    else
+        log "Warning: cyclecloud group not found, setting ownership to root:root"
+        chown root:root "$CONFIG_FILE"
+        chmod 600 "$CONFIG_FILE"
+    fi
 }
 
 # Detect platform information
