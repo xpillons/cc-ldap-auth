@@ -1,14 +1,42 @@
 #!/bin/bash
 
 # Script to merge the [[[configuration]]] section from ldap_auth.txt 
-# into the beginning of the [[[configuration]]] section in slurm.txt
+# into the beginning of the [[[configuration]]] section in a template file
 
 set -e
 
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Usage function
+usage() {
+    echo "Usage: $0 <input_template> <output_template>"
+    echo ""
+    echo "Arguments:"
+    echo "  input_template   - Input template file (e.g., templates/slurm.txt)"
+    echo "  output_template  - Output template file (e.g., templates/slurm_with_ldap.txt)"
+    echo ""
+    echo "Example:"
+    echo "  $0 templates/slurm.txt templates/slurm_with_ldap.txt"
+    exit 1
+}
+
+# Check if help is requested
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    usage
+fi
+
 # File paths
-LDAP_AUTH_FILE="${1:-templates/ldap_auth.txt}"
-SLURM_FILE="${2:-templates/slurm.txt}"
-OUTPUT_FILE="${3:-templates/slurm_with_ldap.txt}"
+LDAP_AUTH_FILE="$SCRIPT_DIR/templates/ldap_auth.txt"
+SLURM_FILE="${1}"
+OUTPUT_FILE="${2}"
+
+# Validate arguments
+if [ -z "$SLURM_FILE" ] || [ -z "$OUTPUT_FILE" ]; then
+    echo "Error: Missing required arguments"
+    echo ""
+    usage
+fi
 
 # Check if files exist
 if [ ! -f "$LDAP_AUTH_FILE" ]; then
