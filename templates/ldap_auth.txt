@@ -1,0 +1,184 @@
+[[[configuration]]]
+# LDAP Authentication
+cyclecloud.ldap_auth.enabled = $configuration_ldap_auth_enabled
+cyclecloud.ldap_auth.schema = $configuration_ldap_auth_schema
+cyclecloud.ldap_auth.uri = $configuration_ldap_uri
+cyclecloud.ldap_auth.search_base = $configuration_ldap_search_base
+cyclecloud.ldap_auth.binder = $configuration_ldap_binder
+cyclecloud.ldap_auth.keyvault_enabled = $configuration_ldap_auth_keyvault_enabled
+cyclecloud.ldap_auth.binder_password = $configuration_ldap_binder_password
+cyclecloud.ldap_auth.keyvault_name = $configuration_ldap_keyvault_name
+cyclecloud.ldap_auth.keyvault_secret = $configuration_ldap_keyvault_secret
+cyclecloud.ldap_auth.clientid = $configuration_ldap_clientid
+cyclecloud.ldap_auth.setup_cron = $configuration_ldap_cron
+cyclecloud.ldap_auth.cache_credentials = $configuration_ldap_auth_cache_credentials
+cyclecloud.ldap_auth.id_mapping = $configuration_ldap_auth_id_mapping
+cyclecloud.ldap_auth.enumerate = $configuration_ldap_auth_enumerate
+cyclecloud.ldap_auth.tls_req_cert = $configuration_ldap_auth_tlsReqcert
+cyclecloud.ldap_auth.home_dir = $configuration_ldap_auth_home_dir
+cyclecloud.ldap_auth.sudoers = $configuration_ldap_auth_sudoers
+cyclecloud.ldap_auth.additional_config = $configuration_ldap_auth_additional_config
+
+[parameters Authentication]
+Order = 35
+    [[parameters LDAP Authentication]]
+    Order = 10
+        [[[parameter ldap_auth_description]]]
+            HideLabel = true
+            Config.Plugin = pico.widget.HtmlTemplateWidget
+            Config.Template = <table role="presentation"><tr><td><p>Use an LDAP Directory or an Active Directory to authenticate users on the cluster</p></td></tr></table>
+
+        [[[parameter configuration_ldap_auth_enabled]]]
+            Label = LDAP Authentication
+            DefaultValue = false
+            Widget.Plugin = pico.form.BooleanCheckBox
+            Widget.Label = Enable LDAP Authentication
+
+    [[parameters Directory Access]]
+    Order = 20
+        [[[parameter ldap_auth_directory_access]]]
+            HideLabel = true
+            Config.Plugin = pico.widget.HtmlTemplateWidget
+            Config.Template = <table role="presentation"><tr><td><p>Specify how to reach your Directory and users</p></td></tr></table>
+
+        [[[parameter configuration_ldap_auth_schema]]]
+            Label = LDAP Schema
+            Description = LDAP Schema
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+            Required = True
+            ParameterType = StringList
+            Config.Plugin = pico.form.Dropdown
+            Config.FreeForm = true
+            Config.Entries := {[Value="AD"],[Value="IPA"]}
+            DefaultValue = AD
+
+        [[[parameter configuration_ldap_uri]]]
+            Label = LDAP URIs
+            DefaultValue = ldap://1.2.3.4
+            Description = Comma separated list of URIs to access the directory
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+        [[[parameter configuration_ldap_search_base]]]
+            Label = LDAP Search Base
+            DefaultValue = "dc=hpc,dc=azure"
+            Description = LDAP Search Base for users search
+            Config.ParameterType = String
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+        [[[parameter configuration_ldap_binder]]]
+            Label = LDAP Binder Account
+            DefaultValue = "CN=Linux Binder,CN=Users,DC=hpc,DC=azure"
+            Description = LDAP Search Binder Account
+            Config.ParameterType = String
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+    [[parameters Binder Password]]
+    Order = 30
+        [[[parameter ldap_auth_binder_password]]]
+            HideLabel = true
+            Config.Plugin = pico.widget.HtmlTemplateWidget
+            Config.Template = <table role="presentation"><tr><td><p>Specify if the Binder password should be ready from a Key Vault or from the template</p></td></tr></table>
+
+        [[[parameter configuration_ldap_auth_keyvault_enabled]]]
+            Label = Use KeyVault
+            DefaultValue = true
+            Widget.Plugin = pico.form.BooleanCheckBox
+            Widget.Label = Use Keyvault to store the binder account password
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+        [[[parameter configuration_ldap_binder_password]]]
+            Label = Binder Password
+            Description = LDAP Search Binder Password
+            ParameterType = Password
+            Conditions.Excluded := configuration_ldap_auth_keyvault_enabled isnt false
+            Conditions.Required := configuration_ldap_auth_keyvault_enabled is false
+
+        [[[parameter configuration_ldap_keyvault_name]]]
+            Label = Key Vault Name
+            Description = Key Vault Name
+            Conditions.Excluded := configuration_ldap_auth_keyvault_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_keyvault_enabled is true
+
+        [[[parameter configuration_ldap_keyvault_secret]]]
+            Label = Key Vault Secret
+            Description = Key Vault Secret Name
+            DefaultValue = ldap-bind-password
+            Conditions.Excluded := configuration_ldap_auth_keyvault_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_keyvault_enabled is true
+
+        [[[parameter configuration_ldap_clientid]]]
+            Label = Client Id
+            Description = Client Id of the User Managed Idenity used to authenticate
+            Conditions.Excluded := configuration_ldap_auth_keyvault_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_keyvault_enabled is true
+
+        [[[parameter configuration_ldap_cron]]]
+            Label = Reload Password
+            DefaultValue = false
+            Widget.Plugin = pico.form.BooleanCheckBox
+            Widget.Label = Regularly reread the binder password from keyvault
+            Conditions.Excluded := configuration_ldap_auth_keyvault_enabled isnt true
+
+    [[parameters SSSD.conf settings]]
+    Order = 40
+        [[[parameter ldap_auth_sssd_conf]]]
+            HideLabel = true
+            Config.Plugin = pico.widget.HtmlTemplateWidget
+            Config.Template = <table role="presentation"><tr><td><p>SSSD.conf specific parameters to set</p></td></tr></table>
+
+        [[[parameter configuration_ldap_auth_cache_credentials]]]
+            Label = Cache Credentials
+            DefaultValue = true
+            Widget.Plugin = pico.form.BooleanCheckBox
+            Widget.Label = Enable credential caching for offline authentication
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+
+        [[[parameter configuration_ldap_auth_id_mapping]]]
+            Label = ID Mapping
+            DefaultValue = true
+            Widget.Plugin = pico.form.BooleanCheckBox
+            Widget.Label = Use SID-based ID mapping for AD
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+
+        [[[parameter configuration_ldap_auth_enumerate]]]
+            Label = Enumerate
+            DefaultValue = false
+            Widget.Plugin = pico.form.BooleanCheckBox
+            Widget.Label = Allow domain enumeration - False for optimization
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+
+        [[[parameter configuration_ldap_auth_tlsReqcert]]]
+            Label = TLS cert check
+            DefaultValue = allow
+            Config.Plugin = pico.form.Dropdown
+            Config.FreeForm = true
+            Config.Entries := {[Value="allow"],[Value="never"],[Value="try"],[Value="demand"],[Value="hard"]}
+            Widget.Label = TLS certificate verification level
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+        [[[parameter configuration_ldap_auth_home_dir]]]
+            Label = Home Directory
+            DefaultValue = /shared/home
+            Description = Base directory for user home directories
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+        [[[parameter configuration_ldap_auth_sudoers]]]
+            Label = Admin Group
+            Description = LDAP group granted sudo access
+            DefaultValue = HPC Admins
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true
+
+        [[[parameter configuration_ldap_auth_additional_config]]]
+            Label = SSSD Configuration
+            Description = Any additional lines to add to sssd.conf
+            ParameterType = Text
+            Conditions.Excluded := configuration_ldap_auth_enabled isnt true
+            Conditions.Required := configuration_ldap_auth_enabled is true

@@ -26,28 +26,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# if cyclecloud.ldap_auth.enabled is false, exit the script
+LDAP_AUTH_ENABLED=$(jetpack config cyclecloud.ldap_auth.enabled false)
+if [ "${LDAP_AUTH_ENABLED,,}" != "true" ]; then
+    log "LDAP authentication is disabled (cyclecloud.ldap_auth.enabled is false). Exiting."
+    exit 0
+fi
+
 # Initialize environment and paths
 initialize_environment() {
     # if CYCLECLOUD_SPEC_PATH is not set use the script directory as the base path
     if [ -z "$CYCLECLOUD_SPEC_PATH" ]; then
         export CYCLECLOUD_SPEC_PATH="$script_dir/.."
-    fi
-    
-    CONFIG_FILE="$CYCLECLOUD_SPEC_PATH/files/ldap-config.json"
-    if [ ! -f "$CONFIG_FILE" ]; then
-        log "Error: Configuration file $CONFIG_FILE not found"
-        exit 1
-    fi
-    
-    # allow access to ldap-config.json only to root and cyclecloud user (if cyclecloud group exists)
-    if getent group cyclecloud >/dev/null 2>&1; then
-        chown root:cyclecloud "$CONFIG_FILE"
-        chmod 640 "$CONFIG_FILE"
-    else
-        log "Warning: cyclecloud group not found, setting ownership to root:root"
-        chown root:root "$CONFIG_FILE"
-        chmod 600 "$CONFIG_FILE"
-    fi
+    fi    
 }
 
 # Detect platform information
@@ -135,28 +126,28 @@ install_dependencies() {
     fi
 }
 
-# Load configuration from JSON file
+# Load configuration
 load_configuration() {
-    log "Loading configuration from $CONFIG_FILE"
+    log "Loading configuration"
     
     # Parse JSON configuration
-    USE_KEYVAULT=$(jq -r '.useKeyvault' "$CONFIG_FILE")
-    CLIENT_ID=$(jq -r '.clientId' "$CONFIG_FILE")
-    KEYVAULT_NAME=$(jq -r '.keyvaultName' "$CONFIG_FILE")
-    KEYVAULT_SECRET_NAME=$(jq -r '.keyvaultSecretName' "$CONFIG_FILE")
-    CACHE_Credentials=$(jq -r '.cacheCredentials' "$CONFIG_FILE")
-    LDAP_URI=$(jq -r '.ldapUri' "$CONFIG_FILE")
-    LDAP_search_base=$(jq -r '.ldapSearchBase' "$CONFIG_FILE")
-    LDAP_Schema=$(jq -r '.ldapSchema' "$CONFIG_FILE")
-    LDAP_default_bind_dn=$(jq -r '.ldapDefaultBindDn' "$CONFIG_FILE")
-    BIND_DN_PASSWORD=$(jq -r '.bindDnPassword' "$CONFIG_FILE")
-    TLS_reqcert=$(jq -r '.tlsReqcert' "$CONFIG_FILE")
-    ID_mapping=$(jq -r '.idMapping' "$CONFIG_FILE")
-    HPC_ADMIN_GROUP=$(jq -r '.hpcAdminGroup' "$CONFIG_FILE")
-    ENUMERATE=$(jq -r '.enumerate' "$CONFIG_FILE")
-    HOME_DIR=$(jq -r '.homeDir' "$CONFIG_FILE")
+    USE_KEYVAULT=$(jetpack config cyclecloud.ldap_auth.keyvault_enabled false)
+    CLIENT_ID=$(jetpack config cyclecloud.ldap_auth.clientid)
+    KEYVAULT_NAME=$(jetpack config cyclecloud.ldap_auth.keyvault_name)
+    KEYVAULT_SECRET_NAME=$(jetpack config cyclecloud.ldap_auth.keyvault_secret)
+    CACHE_Credentials=$(jetpack config cyclecloud.ldap_auth.cache_credentials)
+    LDAP_URI=$(jetpack config cyclecloud.ldap_auth.uri)
+    LDAP_search_base=$(jetpack config cyclecloud.ldap_auth.search_base)
+    LDAP_Schema=$(jetpack config cyclecloud.ldap_auth.schema AD)
+    LDAP_default_bind_dn=$(jetpack config cyclecloud.ldap_auth.binder)
+    BIND_DN_PASSWORD=$(jetpack config cyclecloud.ldap_auth.binder_password)
+    TLS_reqcert=$(jetpack config yclecloud.ldap_auth.tls_req_cert)
+    ID_mapping=$(jetpack config cyclecloud.ldap_auth.id_mapping)
+    HPC_ADMIN_GROUP=$(jetpack config cyclecloud.ldap_auth.sudoers)
+    ENUMERATE=$(jetpack config cyclecloud.ldap_auth.enumerate false)
+    HOME_DIR=$(jetpack config cyclecloud.ldap_auth.home_dir)
     HOME_DIR_TOP=$(echo "$HOME_DIR" | awk -F/ '{print FS $2}')
-    SETUP_CRON=$(jq -r '.setupCron' "$CONFIG_FILE")
+    SETUP_CRON=$(jetpack config cyclecloud.ldap_auth.setup_cron false)
     
     # Export variables for use in other functions
     export USE_KEYVAULT CLIENT_ID KEYVAULT_NAME KEYVAULT_SECRET_NAME CACHE_Credentials
