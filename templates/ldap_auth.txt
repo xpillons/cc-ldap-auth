@@ -174,11 +174,9 @@ Order = 35
             Description = LDAP group granted sudo access
             DefaultValue = HPC Admins
             Conditions.Excluded := configuration_ldap_auth_enabled isnt true
-            Conditions.Required := configuration_ldap_auth_enabled is true
 
         [[[parameter configuration_ldap_auth_additional_config]]]
             Label = SSSD Configuration
             Description = Any additional lines to add to sssd.conf
             ParameterType = Text
             Conditions.Excluded := configuration_ldap_auth_enabled isnt true
-            Conditions.Required := configuration_ldap_auth_enabled is true
