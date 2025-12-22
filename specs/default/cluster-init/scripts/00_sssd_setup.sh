@@ -9,6 +9,12 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
+# Helper function to check if a value is valid (not empty, null, or None)
+is_valid_value() {
+    local value="$1"
+    [ -n "$value" ] && [ "$value" != "null" ] && [ "$value" != "None" ]
+}
+
 # Parse command line arguments
 PASSWORD_UPDATE_ONLY=false
 while [[ $# -gt 0 ]]; do
@@ -178,12 +184,12 @@ handle_keyvault_auth() {
         # Logon using the VM identity
         # CLIENT_ID is optional - if empty/null, use System Assigned Managed Identity
         # If provided, use User Assigned Managed Identity with the specified client ID
-        if [ -z "$CLIENT_ID" ] || [ "$CLIENT_ID" == "null" ]; then
-            log "Using System Assigned Managed Identity (CLIENT_ID not specified)"
-            az login --identity >/dev/null 2>&1 || (log "Error: az login failed"; exit 1)
-        else
+        if is_valid_value "$CLIENT_ID"; then
             log "Using User Assigned Managed Identity with client ID: $CLIENT_ID"
             az login --identity --client-id "$CLIENT_ID" >/dev/null 2>&1 || (log "Error: az login failed"; exit 1)
+        else
+            log "Using System Assigned Managed Identity (CLIENT_ID not specified)"
+            az login --identity >/dev/null 2>&1 || (log "Error: az login failed"; exit 1)
         fi
 
         log "Retrieving LDAP bind password from Keyvault"
@@ -191,7 +197,7 @@ handle_keyvault_auth() {
         BIND_DN_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.value')
         SECRET_UPDATED=$(echo "$SECRET_JSON" | jq -r '.attributes.updated')
         
-        if [ -z "$BIND_DN_PASSWORD" ] || [ "$BIND_DN_PASSWORD" == "null" ]; then
+        if ! is_valid_value "$BIND_DN_PASSWORD"; then
             log "Error: Unable to retrieve LDAP bind password from Keyvault"
             exit 1
         fi
@@ -296,7 +302,7 @@ configure_sssd() {
         sed -i "s#HOME_DIR#$HOME_DIR#g" /etc/sssd/sssd.conf
 
         # Append additional SSSD options if provided (only if not already present)
-        if [ -n "$SSSD_ADDITIONAL_OPTIONS" ] && [ "$SSSD_ADDITIONAL_OPTIONS" != "null" ]; then
+        if is_valid_value "$SSSD_ADDITIONAL_OPTIONS"; then
             if ! grep -q "# SSSD Additional Configuration Options" /etc/sssd/sssd.conf; then
                 log "Appending additional SSSD configuration options"
                 echo "" >> /etc/sssd/sssd.conf
@@ -308,7 +314,7 @@ configure_sssd() {
         fi
 
         # Obfuscate the bind DN password
-        if [ -n "$BIND_DN_PASSWORD" ] && [ "$BIND_DN_PASSWORD" != "null" ]; then
+        if is_valid_value "$BIND_DN_PASSWORD"; then
             echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
         else
             log "Warning: BIND_DN_PASSWORD is empty, skipping password obfuscation"
@@ -343,7 +349,7 @@ update_sssd_password_only() {
         
         # Read the current SSSD config to preserve other settings
         # Only update the obfuscated password in the existing config
-        if [ -n "$BIND_DN_PASSWORD" ] && [ "$BIND_DN_PASSWORD" != "null" ]; then
+        if is_valid_value "$BIND_DN_PASSWORD"; then
             echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
             log "SSSD password updated successfully"
         else
@@ -443,7 +449,7 @@ configure_pam_and_homedir() {
 
 # Configure sudo access for LDAP admin group
 configure_sudo_access() {
-    if [ -n "$HPC_ADMIN_GROUP" ] && [ "$HPC_ADMIN_GROUP" != "null" ]; then
+    if is_valid_value "$HPC_ADMIN_GROUP"; then
         log "Configuring sudo access for LDAP admin group: $HPC_ADMIN_GROUP"
         echo "\"%$HPC_ADMIN_GROUP\" ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/hpc_admins
     else
