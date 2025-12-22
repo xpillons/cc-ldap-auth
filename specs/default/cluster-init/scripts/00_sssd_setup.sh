@@ -308,7 +308,11 @@ configure_sssd() {
         fi
 
         # Obfuscate the bind DN password
-        echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
+        if [ -n "$BIND_DN_PASSWORD" ] && [ "$BIND_DN_PASSWORD" != "null" ]; then
+            echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
+        else
+            log "Warning: BIND_DN_PASSWORD is empty, skipping password obfuscation"
+        fi
 
         # Set proper permissions
         chmod 600 /etc/sssd/sssd.conf
@@ -339,9 +343,13 @@ update_sssd_password_only() {
         
         # Read the current SSSD config to preserve other settings
         # Only update the obfuscated password in the existing config
-        echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
-        
-        log "SSSD password updated successfully"
+        if [ -n "$BIND_DN_PASSWORD" ] && [ "$BIND_DN_PASSWORD" != "null" ]; then
+            echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
+            log "SSSD password updated successfully"
+        else
+            log "Error: BIND_DN_PASSWORD is empty, cannot update password"
+            exit 1
+        fi
         
         # Restart SSSD service
         log "Restarting SSSD service due to password change"
