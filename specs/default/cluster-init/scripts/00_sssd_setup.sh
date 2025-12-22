@@ -421,8 +421,12 @@ configure_pam_and_homedir() {
 
 # Configure sudo access for LDAP admin group
 configure_sudo_access() {
-    log "Configuring sudo access for LDAP admin group: $HPC_ADMIN_GROUP"
-    echo "\"%$HPC_ADMIN_GROUP\" ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/hpc_admins
+    if [ -n "$HPC_ADMIN_GROUP" ] && [ "$HPC_ADMIN_GROUP" != "null" ]; then
+        log "Configuring sudo access for LDAP admin group: $HPC_ADMIN_GROUP"
+        echo "\"%$HPC_ADMIN_GROUP\" ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/hpc_admins
+    else
+        log "HPC_ADMIN_GROUP is not configured, skipping sudo access setup"
+    fi
 }
 
 # Start and enable SSSD service
