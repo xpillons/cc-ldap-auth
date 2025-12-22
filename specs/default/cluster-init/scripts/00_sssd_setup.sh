@@ -148,11 +148,13 @@ load_configuration() {
     HOME_DIR=$(jetpack config cyclecloud.ldap_auth.home_dir)
     HOME_DIR_TOP=$(echo "$HOME_DIR" | awk -F/ '{print FS $2}')
     SETUP_CRON=$(jetpack config cyclecloud.ldap_auth.setup_cron false)
+    SSSD_ADDITIONAL_OPTIONS=$(jetpack config cyclecloud.ldap_auth.additional_config "")
     
     # Export variables for use in other functions
     export USE_KEYVAULT CLIENT_ID KEYVAULT_NAME KEYVAULT_SECRET_NAME CACHE_Credentials
     export LDAP_URI LDAP_search_base LDAP_Schema LDAP_default_bind_dn BIND_DN_PASSWORD
     export TLS_reqcert ID_mapping HPC_ADMIN_GROUP ENUMERATE HOME_DIR HOME_DIR_TOP SETUP_CRON
+    export SSSD_ADDITIONAL_OPTIONS
 }
 
 # Handle Azure Key Vault authentication and secret retrieval
@@ -292,6 +294,18 @@ configure_sssd() {
         sed -i "s#ENUMERATE#$ENUMERATE#g" /etc/sssd/sssd.conf
         sed -i "s#TLS_CERT_Location#$TLS_CERT_Location#g" /etc/sssd/sssd.conf
         sed -i "s#HOME_DIR#$HOME_DIR#g" /etc/sssd/sssd.conf
+
+        # Append additional SSSD options if provided (only if not already present)
+        if [ -n "$SSSD_ADDITIONAL_OPTIONS" ] && [ "$SSSD_ADDITIONAL_OPTIONS" != "null" ]; then
+            if ! grep -q "# SSSD Additional Configuration Options" /etc/sssd/sssd.conf; then
+                log "Appending additional SSSD configuration options"
+                echo "" >> /etc/sssd/sssd.conf
+                echo "# SSSD Additional Configuration Options" >> /etc/sssd/sssd.conf
+                echo "$SSSD_ADDITIONAL_OPTIONS" >> /etc/sssd/sssd.conf
+            else
+                log "Additional SSSD options already present, skipping"
+            fi
+        fi
 
         # Obfuscate the bind DN password
         echo -n "$BIND_DN_PASSWORD" | sss_obfuscate --domain default -s
