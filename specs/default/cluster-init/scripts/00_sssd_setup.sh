@@ -51,62 +51,52 @@ initialize_environment() {
 }
 
 # Detect platform information
-detect_platform() {
-    # Try to use jetpack if available, otherwise fall back to OS detection
-    if command -v jetpack >/dev/null 2>&1; then
-        platform_family=$(jetpack config platform_family 2>/dev/null)
-        platform=$(jetpack config platform 2>/dev/null)
-        platform_version=$(jetpack config platform_version 2>/dev/null)
-    fi
-    
-    # Fallback platform detection if jetpack is not available (e.g., when running in cron)
-    if [ -z "$platform_family" ] || [ -z "$platform" ]; then
-        if [ -f /etc/os-release ]; then
-            . /etc/os-release
-            case "$ID" in
-                ubuntu)
-                    platform="ubuntu"
+detect_platform() {   
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "$ID" in
+            ubuntu)
+                platform="ubuntu"
+                platform_family="debian"
+                platform_version="$VERSION_ID"
+                ;;
+            debian)
+                platform="debian" 
+                platform_family="debian"
+                platform_version="$VERSION_ID"
+                ;;
+            rhel|redhat)
+                platform="redhat"
+                platform_family="rhel"
+                platform_version="$VERSION_ID"
+                ;;
+            almalinux)
+                platform="almalinux"
+                platform_family="rhel"
+                platform_version="$VERSION_ID"
+                ;;
+            centos)
+                platform="centos"
+                platform_family="rhel"
+                platform_version="$VERSION_ID"
+                ;;
+            *)
+                log "Warning: Unknown platform ID: $ID, attempting to detect family"
+                if [ -f /etc/debian_version ]; then
                     platform_family="debian"
-                    platform_version="$VERSION_ID"
-                    ;;
-                debian)
-                    platform="debian" 
-                    platform_family="debian"
-                    platform_version="$VERSION_ID"
-                    ;;
-                rhel|redhat)
+                    platform="debian"
+                elif [ -f /etc/redhat-release ]; then
+                    platform_family="rhel"
                     platform="redhat"
-                    platform_family="rhel"
-                    platform_version="$VERSION_ID"
-                    ;;
-                almalinux)
-                    platform="almalinux"
-                    platform_family="rhel"
-                    platform_version="$VERSION_ID"
-                    ;;
-                centos)
-                    platform="centos"
-                    platform_family="rhel"
-                    platform_version="$VERSION_ID"
-                    ;;
-                *)
-                    log "Warning: Unknown platform ID: $ID, attempting to detect family"
-                    if [ -f /etc/debian_version ]; then
-                        platform_family="debian"
-                        platform="debian"
-                    elif [ -f /etc/redhat-release ]; then
-                        platform_family="rhel"
-                        platform="redhat"
-                    else
-                        log "Error: Unable to detect platform"
-                        exit 1
-                    fi
-                    ;;
-            esac
-        else
-            log "Error: Cannot detect platform - /etc/os-release not found"
-            exit 1
-        fi
+                else
+                    log "Error: Unable to detect platform"
+                    exit 1
+                fi
+                ;;
+        esac
+    else
+        log "Error: Cannot detect platform - /etc/os-release not found"
+        exit 1
     fi
     
     export platform_family platform platform_version
