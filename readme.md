@@ -86,6 +86,8 @@ az keyvault create --name mykeyvault --resource-group myrg --location eastus
 az keyvault secret set --vault-name mykeyvault --name ldap-bind-password --value "your-secure-password"
 ```
 
+**Note**: The account running `az keyvault secret set` must have the **Key Vault Secrets Officer** role (or equivalent secret write permissions) on the target Key Vault.
+
 #### Configure Managed Identity:
 ```bash
 # Create managed identity
@@ -97,6 +99,8 @@ az role assignment create \
   --role "Key Vault Secrets User" \
   --scope /subscriptions/<subscription-id>/resourceGroups/<rg>/providers/Microsoft.KeyVault/vaults/mykeyvault
 ```
+
+**Note**: The value passed to `--scope` is the Azure resource ID of the target Key Vault.
 
 **Important**: The managed identity must be assigned to the CycleCloud cluster nodes. In your CycleCloud cluster template, configure the managed identity for the node arrays that will use LDAP authentication.
 
