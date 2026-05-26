@@ -20,6 +20,15 @@ This project provides comprehensive LDAP authentication setup for Azure CycleClo
 - Azure Key Vault (optional, for secure password management)
 - Managed Identity with Key Vault access (if using Key Vault)
 
+### Network Prerequisites (Required for LDAP Access)
+
+Ensure all CycleCloud nodes can reach your LDAP endpoints and required services:
+
+- Open outbound `TCP/389` to LDAP servers when using `ldap://`
+- Ensure DNS resolution works for LDAP hostnames (DNS `TCP/UDP 53`)
+
+If Azure Key Vault is enabled for password retrieval, also allow outbound `TCP/443` to Azure Key Vault endpoints.
+
 ## 🛠️ Installation & Setup
 
 ### 1. Clone the Repository
@@ -90,6 +99,13 @@ az role assignment create \
 ```
 
 **Important**: The managed identity must be assigned to the CycleCloud cluster nodes. In your CycleCloud cluster template, configure the managed identity for the node arrays that will use LDAP authentication.
+
+**CycleCloud Workspace Note**: If you are using CycleCloud Workspace, you can reuse the `ccwLockerManagedIdentity` user-assigned managed identity. It is created by CycleCloud Workspace and assigned to VMs created by CycleCloud, so you can use its client ID in `ldap-config.json` (`clientId` field).
+
+Retrieve its client ID with Azure CLI:
+```bash
+az identity show --name ccwLockerManagedIdentity --resource-group <cyclecloud-workspace-resource-group> --query clientId -o tsv
+```
 
 
 Update your `ldap-config.json`:
